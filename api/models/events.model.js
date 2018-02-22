@@ -1,7 +1,7 @@
 'use strict';
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
-
+var ObjectId = mongoose.Schema.Types.ObjectId;
 
 var EventsSchema = new Schema({
   name: {
@@ -12,23 +12,20 @@ var EventsSchema = new Schema({
     type: Date,
     default: Date.now
   },
-  on_days: {
+  valid_days: {
     type: [{
       type: String,
-      enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+      enum: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     }],
+    require: true,
   },
   official_date: {
-    type: {
-      type: Date,
-    },
+    type: Date,
   },
   status: {
-    type: [{
-      type: String,
-      enum: ['idle', 'pending', 'active', 'completed', 'canceled']
-    }],
-    default: ['idle']
+    type: String,
+    enum: ['idle', 'pending', 'active', 'completed', 'canceled'],
+    default: 'idle'
   },
   weight: {
     type: Number,
@@ -37,7 +34,11 @@ var EventsSchema = new Schema({
   length: {
     type: Number,
     default: 1,
-  }
+  },
+  users: [{
+    type: ObjectId,
+    ref: 'Users'
+  }]
 });
 
 module.exports = mongoose.model('Events', EventsSchema);

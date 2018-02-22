@@ -24,10 +24,9 @@ exports.read = function(req, res) {
 };
 
 exports.update = function(req, res) {
-  const body = Object.assign({}, req.body, {
-    users: req.body.users.split(','),
-  });
-  Group.findOneAndUpdate({ _id: req.params.groupId }, body, { new: true })
+  if (req.body.users) req.body.users = req.body.users.split(',');
+
+  Group.findOneAndUpdate({ _id: req.params.groupId }, req.body, { new: true })
     .then(group => res.json(group))
     .catch(err => res.send(err));
 };

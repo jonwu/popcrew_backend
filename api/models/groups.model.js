@@ -15,7 +15,7 @@ var GroupsSchema = new Schema({
   users: [{
     type: ObjectId,
     ref: 'Users',
-  }]
+  }],
 });
 
 module.exports = mongoose.model('Groups', GroupsSchema);
