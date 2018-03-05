@@ -39,7 +39,7 @@ var EventsSchema = new Schema({
     type: ObjectId,
     ref: 'Users'
   }],
-  creator: {
+  author: {
     type: ObjectId,
     ref: 'Users'
   }
