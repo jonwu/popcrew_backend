@@ -1,9 +1,14 @@
 'use strict';
+const helper = require('../helpers/helper');
+
 var mongoose = require('mongoose'),
   Invitation = mongoose.model('Invitations');
 
 exports.list = function(req, res) {
-  Invitation.find({})
+  const query = {}
+  if (req.query.user) query.user = req.query.user;
+  if (req.query.event) query.event = req.query.event;
+  Invitation.find(query)
     .then(invitation => res.json(invitation))
     .catch(err => res.send(err));
 };
@@ -35,3 +40,9 @@ exports.delete = function(req, res) {
     .then(invitation => res.json('Invitation sucessfully deleted'))
     .catch(err => res.send(err));
 };
+
+exports.generateInvites = function(req, res) {
+  const date = new Date(req.query.date);
+  console.log(date)
+  helper.handleInvites(date);
+}

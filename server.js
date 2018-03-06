@@ -9,6 +9,7 @@ var express = require('express'),
   Invitations = require('./api/models/invitations.model'), //created model loading here
   bodyParser = require('body-parser'),
   helper = require('./api/helpers/helper');
+  moment = require('moment');
 
 
 mongoose.Promise = global.Promise;
@@ -29,7 +30,7 @@ groupsRoutes(app); //register the route
 blackoutsRoutes(app); //register the route
 invitationsRoutes(app); //register the route
 
-helper.handleInvites(new Date());
+helper.handleInvites(moment().startOf('day').add(3, 'days'));
 
 
 console.log('RESTful API server started on: ' + port);

@@ -20,11 +20,14 @@ exports.handleInvites = function(date) {
       shuffledEvents.map(event => {
         chainedPromises = chainedPromises
           .then((resp) => {
-            //3. get all blackouts from group of users
+            //3. get all blackouts from group of users & checked if first day is blacked out
             return isBlackedOutPromise(event.users, date);
           })
           .then(isBlackedOut => {
             if (!isBlackedOut) {
+              // Update event to pending
+              Event.findOneAndUpdate({ _id: event._id }, {status: 'pending'}).exec();
+
               // 4. Check if valid days are blacked out
               const isBlackedOutPromises = event.valid_days.map(day => {
                 const validDate = getNextDate(date, day);
@@ -37,6 +40,7 @@ exports.handleInvites = function(date) {
                 const availableDates = availableDays
                   .map(day => getNextDate(date, day))
                   .sort((left, right) => left.diff(right));
+
                 const randomDates = [
                   availableDates[0],
                   ..._.sampleSize(availableDates.slice(1), 2),
@@ -48,12 +52,12 @@ exports.handleInvites = function(date) {
                   })
                   return Promise.all(blackouts)
                 })
+                console.log(event.name, randomDates)
 
                 // 7. Send out invitations
                 event.users.map(user => {
                   new Invitation({ dates_options: randomDates, user, event: event._id }).save();
                 })
-
 
                 return Promise.all(createBlackouts)
               });

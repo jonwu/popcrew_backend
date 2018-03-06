@@ -11,4 +11,5 @@ module.exports = function(app) {
     .get(invitationsController.read)
     .put(invitationsController.update)
     .delete(invitationsController.delete);
+    
 };
