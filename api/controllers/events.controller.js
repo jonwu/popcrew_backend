@@ -5,6 +5,7 @@ var mongoose = require('mongoose'),
 exports.list = function(req, res) {
   const query = {};
   if (req.query.status) query.status = req.query.status;
+  if (req.query.user) query.users = req.query.user;
   Event.find(query)
     .then(event => res.json(event))
     .catch(err => res.send(err));
@@ -30,7 +31,7 @@ exports.read = function(req, res) {
 exports.update = function(req, res) {
   if (req.body.valid_days) req.body.valid_days = req.body.valid_days.split(',');
   if (req.body.users) req.body.users = req.body.users.split(',');
-  console.log(req.body)
+
   Event.findOneAndUpdate({ _id: req.params.eventId }, req.body, { new: true })
     .then(event => res.json(event))
     .catch(err => res.send(err));

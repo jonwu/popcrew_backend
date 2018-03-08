@@ -21,9 +21,11 @@ exports.handleInvites = function(date) {
         chainedPromises = chainedPromises
           .then((resp) => {
             //3. get all blackouts from group of users & checked if first day is blacked out
+            console.log(event.name, date);
             return isBlackedOutPromise(event.users, date);
           })
           .then(isBlackedOut => {
+            console.log(event.name, isBlackedOut);
             if (!isBlackedOut) {
               // Update event to pending
               Event.findOneAndUpdate({ _id: event._id }, {status: 'pending'}).exec();
@@ -73,7 +75,7 @@ function getNextDate(date, day) {
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const nDay = days.indexOf(day);
   if (moment(date).isoWeekday() <= nDay) return moment().isoWeekday(nDay).startOf('day');
-  return moment()
+  return moment(date)
     .add(1, 'weeks')
     .isoWeekday(nDay)
     .startOf('day');

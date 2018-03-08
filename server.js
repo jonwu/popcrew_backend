@@ -30,7 +30,7 @@ groupsRoutes(app); //register the route
 blackoutsRoutes(app); //register the route
 invitationsRoutes(app); //register the route
 
-helper.handleInvites(moment().startOf('day').add(3, 'days'));
+helper.handleInvites(moment().startOf('day').add(9, 'days'));
 
 
 console.log('RESTful API server started on: ' + port);
