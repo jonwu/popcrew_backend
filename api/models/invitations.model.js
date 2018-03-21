@@ -23,9 +23,12 @@ var InvitationsSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ['idle', 'accepted', 'rejected'],
+    enum: ['idle', 'accepted', 'rejected', 'interested'],
     default: 'idle'
   },
+},
+{
+    timestamps: true
 });
 
 module.exports = mongoose.model('Invitations', InvitationsSchema);

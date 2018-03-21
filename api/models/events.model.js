@@ -24,17 +24,34 @@ var EventsSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ['idle', 'pending', 'active', 'completed', 'canceled'],
+    enum: ['idle', 'pending', 'processing', 'active', 'completed', 'canceled'],
     default: 'idle'
+  },
+  dates_options: [{
+    type: Date,
+  }],
+  date_confirmed: {
+    type: Date,
   },
   weight: {
     type: Number,
     default: 1,
   },
+  notified_days_before: {
+    type: Number,
+    default: 7,
+  },
+  expiration: {
+    type: Date,
+  },
   length: {
     type: Number,
     default: 1,
   },
+  groups: [{
+    type: ObjectId,
+    ref: 'Groups'
+  }],
   users: [{
     type: ObjectId,
     ref: 'Users'

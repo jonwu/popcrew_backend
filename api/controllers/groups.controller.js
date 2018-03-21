@@ -10,6 +10,7 @@ exports.list = function(req, res) {
 };
 
 exports.create = function(req, res) {
+  if (req.body.users) req.body.users = req.body.users.split(',');
   var new_group = new Group(req.body);
   new_group
     .save()

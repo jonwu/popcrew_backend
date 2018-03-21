@@ -6,7 +6,6 @@ var ObjectId = mongoose.Schema.Types.ObjectId;
 var GroupsSchema = new Schema({
   name: {
     type: String,
-    required: true,
   },
   date_created: {
     type: Date,

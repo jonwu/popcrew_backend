@@ -9,6 +9,6 @@ module.exports = function(app) {
 
   app.route('/events/:eventId')
     .get(eventsController.read)
-    .put(eventsController.update)
+    .patch(eventsController.update)
     .delete(eventsController.delete);
 };

@@ -4,9 +4,11 @@ var mongoose = require('mongoose'),
 
 exports.list = function(req, res) {
   const query = {};
-  if (req.query.status) query.status = req.query.status;
+  if (req.query.status) query.status = req.query.status.split(',');
   if (req.query.user) query.users = req.query.user;
-  Event.find(query)
+  let EventObj = Event.find(query)
+  if (req.query.expiration) EventObj = EventObj.sort({expiration: req.query.expiration})
+  EventObj.populate('users')
     .then(event => res.json(event))
     .catch(err => res.send(err));
 };

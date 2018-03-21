@@ -9,6 +9,9 @@ module.exports = function(app) {
 
   app.route('/users/:userId')
     .get(usersController.read)
-    .put(usersController.update)
+    .patch(usersController.update)
     .delete(usersController.delete);
+
+  app.route('/signin')
+    .get(usersController.signin);
 };

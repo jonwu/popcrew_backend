@@ -7,9 +7,9 @@ module.exports = function(app) {
     .post(invitationsController.create);
 
 
-  app.route('/invitations/:userId')
+  app.route('/invitations/:invitationId')
     .get(invitationsController.read)
-    .put(invitationsController.update)
+    .patch(invitationsController.update)
     .delete(invitationsController.delete);
-    
+
 };

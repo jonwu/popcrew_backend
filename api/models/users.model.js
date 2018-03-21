@@ -17,6 +17,12 @@ var UsersSchema = new Schema({
     required: true,
     unique: true,
   },
+  apn_tokens: [{
+    type: String,
+  }],
+  gcm_tokens: [{
+    type: String,
+  }],
   date_created: {
     type: Date,
     default: Date.now
