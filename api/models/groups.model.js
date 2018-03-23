@@ -15,6 +15,10 @@ var GroupsSchema = new Schema({
     type: ObjectId,
     ref: 'Users',
   }],
+  codename: {
+    type: String,
+    unique: true,
+  }
 });
 
 module.exports = mongoose.model('Groups', GroupsSchema);

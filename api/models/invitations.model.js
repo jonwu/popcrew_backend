@@ -4,10 +4,6 @@ var Schema = mongoose.Schema;
 var ObjectId = mongoose.Schema.Types.ObjectId;
 
 var InvitationsSchema = new Schema({
-  dates_options: [{
-    type: Date,
-    required: true,
-  }],
   dates_accepted: [{
     type: Date,
   }],

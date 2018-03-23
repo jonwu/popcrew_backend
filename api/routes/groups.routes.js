@@ -9,6 +9,9 @@ module.exports = function(app) {
 
   app.route('/groups/:groupId')
     .get(groupsController.read)
-    .put(groupsController.update)
+    .patch(groupsController.update)
     .delete(groupsController.delete);
+
+  app.route('/addToGroup/:codename')
+    .patch(groupsController.addUser)
 };

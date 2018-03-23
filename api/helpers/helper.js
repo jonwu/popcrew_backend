@@ -7,6 +7,7 @@ const Blackout = mongoose.model('Blackouts');
 const Invitation = mongoose.model('Invitations');
 const User = mongoose.model('Users');
 const CronJob = require('cron').CronJob;
+const ObjectId = mongoose.Schema.Types.ObjectId;
 
 const options = {
   token: {
@@ -43,6 +44,21 @@ exports.initCronJobs = function () {
     },
     true, /* Start the job right now */
   );
+}
+exports.handleNewUser = function(userId, groupId) {
+  return Event.find({ groups: groupId }).then(events => {
+    const updatedEvents = events.map(event => {
+      return Event.findOneAndUpdate({ _id: event._id }, {
+        $addToSet: { users: [userId]}
+      });
+    });
+    return Promise.all(updatedEvents)
+  }).then(events => {
+    const invitations = events.filter(event => event.status === 'pending').map(event => {
+      return new Invitation({ user: userId, event: event._id }).save();
+    });
+    return Promise.all(invitations);
+  })
 }
 exports.processInvites = function() {
   // const nowOffset = moment().subtract(1, 'hours');
@@ -105,7 +121,7 @@ exports.processInvites = function() {
                 });
               });
             } else {
-              Event.findOneAndUpdate({ _id: event._id }, { status: 'idle' });
+              Event.findOneAndUpdate({ _id: event._id }, { status: 'idle' }).exec();
             }
           }
         });
@@ -142,16 +158,7 @@ exports.handleInvites = function(baseDate, expiration = 3) {
           })
           .then(isBlackedOut => {
             if (!isBlackedOut) {
-              // Update event to pending
-              Event.findOneAndUpdate(
-                { _id: event._id },
-                {
-                  status: 'pending',
-                  expiration: moment(baseDate)
-                    .startOf('day')
-                    .add(expiration, 'days'),
-                },
-              ).exec();
+
 
               // 4. Check if valid days are blacked out
               const isBlackedOutPromises = event.valid_days.map(day => {
@@ -179,10 +186,21 @@ exports.handleInvites = function(baseDate, expiration = 3) {
                 });
                 console.log("-------------" + event.name, randomDates);
 
+                // Update event to pending
+                Event.findOneAndUpdate(
+                  { _id: event._id },
+                  {
+                    status: 'pending',
+                    dates_options: randomDates,
+                    expiration: moment(baseDate)
+                      .startOf('day')
+                      .add(expiration, 'days'),
+                  },
+                ).exec();
+
                 // 7. Send out invitations
                 event.users.map(userId => {
-                  console.log(event.name, userId)
-                  new Invitation({ dates_options: randomDates, user: userId, event: event._id }).save()
+                  new Invitation({ user: userId, event: event._id }).save()
                   .then(invitation => {
                     return User.findOne(userId).then(user => {
                       const message = `You have been invited to ${event.name}.`;
