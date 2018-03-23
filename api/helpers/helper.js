@@ -26,31 +26,21 @@ exports.initCronJobs = function() {
   const handleInvitesJob = new CronJob(
     '00 30 11 * * 0-6',
     function() {
-      /*
-     * Runs every weekday (Monday through Friday)
-     * at 11:30:00 AM. It does not run on Saturday
-     * or Sunday.
-     */
       handleInvites(moment());
     },
     function() {
-      /* This function is executed when the job stops */
     },
-    true /* Start the job right now */,
+    true
   );
 
   const processInvitesJob = new CronJob(
     '0 0 */4 * * *',
     function() {
-      /*
-       * Runs every 4 hours
-       */
       processInvites();
     },
     function() {
-      /* This function is executed when the job stops */
     },
-    true /* Start the job right now */,
+    true
   );
 };
 exports.handleNewUser = function(userId, groupId) {
