@@ -20,27 +20,31 @@ const options = {
 const apnProvider = new apn.Provider(options);
 
 exports.initCronJobs = function () {
-  // this.processInvites()
+  const processInvites = this.processInvites;
+  const handleInvites = this.handleInvites;
+
   const handleInvitesJob = new CronJob('00 30 11 * * 0-6', function() {
     /*
      * Runs every weekday (Monday through Friday)
      * at 11:30:00 AM. It does not run on Saturday
      * or Sunday.
      */
+      handleInvites(moment());
     }, function () {
       /* This function is executed when the job stops */
-      this.handleInvites(moment());
+
     },
     true, /* Start the job right now */
   );
 
-  const processInvitesJob = new CronJob('* * 04 * * *', function() {
-    /*
-     * Runs every 4 hours
-     */
+  const processInvitesJob = new CronJob('0 0 */4 * * *', function() {
+      /*
+       * Runs every 4 hours
+       */
+      processInvites()
     }, function () {
       /* This function is executed when the job stops */
-      this.processInvites();
+
     },
     true, /* Start the job right now */
   );
@@ -61,6 +65,7 @@ exports.handleNewUser = function(userId, groupId) {
   })
 }
 exports.processInvites = function() {
+  console.log("Processing Invites");
   // const nowOffset = moment().subtract(1, 'hours');
   const nowOffset = moment().add(20, 'hours');
   Event.find()
@@ -76,8 +81,8 @@ exports.processInvites = function() {
             const postGracePeriod = moment(invitation.updated_at) < nowOffset;
             return ready && ((invitation.status !== 'idle' && postGracePeriod) || postExpiration);
           }, true);
-          if (true) {
-          // if (isReady) {
+          // if (true) {
+          if (isReady) {
             // Get Counter for all date options
             const datesAcceptedCount = invitations.reduce((dates_accepted_count, invitation) => {
               for (let i = 0; i < invitation.dates_accepted.length; i++) {
@@ -93,8 +98,8 @@ exports.processInvites = function() {
 
             // Check if counters meet threshold
             const dates_options = Object.keys(datesAcceptedCount)
-              .filter(date => datesAcceptedCount[date] === 1)
-              // .filter(date => datesAcceptedCount[date] === event.users.length)
+              // .filter(date => datesAcceptedCount[date] === 1) // Test purposes only
+              .filter(date => datesAcceptedCount[date] === event.users.length)
               .sort((left, right) => left < right);
 
             // console.log('dates options', dates_options);
@@ -130,6 +135,7 @@ exports.processInvites = function() {
 };
 
 exports.handleInvites = function(baseDate, expiration = 3) {
+  console.log("Handling Invites");
   // 1. Find all events by date, weight, and status
   return Event.find()
     .where('status')
