@@ -28,9 +28,8 @@ exports.initCronJobs = function() {
     function() {
       handleInvites(moment());
     },
-    function() {
-    },
-    true
+    function() {},
+    true,
   );
 
   const processInvitesJob = new CronJob(
@@ -38,9 +37,8 @@ exports.initCronJobs = function() {
     function() {
       processInvites();
     },
-    function() {
-    },
-    true
+    function() {},
+    true,
   );
 };
 exports.handleNewUser = function(userId, groupId) {
@@ -52,7 +50,7 @@ exports.handleNewUser = function(userId, groupId) {
           {
             $addToSet: { users: [userId] },
           },
-        )
+        );
       });
       return Promise.all(updatedEvents);
     })
