@@ -52,7 +52,7 @@ exports.handleNewUser = function(userId, groupId) {
           {
             $addToSet: { users: [userId] },
           },
-        );
+        )
       });
       return Promise.all(updatedEvents);
     })
