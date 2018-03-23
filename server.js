@@ -35,7 +35,7 @@ invitationsRoutes(app); //register the route
 //   chainedPromises = chainedPromises.then(() => helper.handleInvites(moment().startOf('day').add(index, 'days')));
 // })
 // helper.processInvites();
-helper.initCronJobs();
+// helper.initCronJobs();
 // helper.sendPushNotification();
 
 
