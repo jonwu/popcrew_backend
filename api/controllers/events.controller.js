@@ -32,11 +32,12 @@ exports.read = function(req, res) {
 };
 
 exports.update = function(req, res) {
-  if (req.body.valid_days) req.body.valid_days = req.body.valid_days.split(',');
-  if (req.body.users) req.body.users = req.body.users.split(',');
-  if (req.body.groups) req.body.groups = req.body.groups.split(',');
+  query = {}
+  if (req.body.valid_days) query.valid_days = req.body.valid_days.split(',');
+  if (req.body.users) query.users = req.body.users.split(',');
+  if (req.body.groups) query.groups = req.body.groups.split(',');
 
-  Event.findOneAndUpdate({ _id: req.params.eventId }, req.body, { new: true })
+  Event.findOneAndUpdate({ _id: req.params.eventId }, query, { new: true })
     .then(event => res.json(event))
     .catch(err => res.send(err));
 };
