@@ -14,11 +14,12 @@ exports.list = function(req, res) {
 };
 
 exports.create = function(req, res) {
-  if (req.body.valid_days) req.body.valid_days = req.body.valid_days.split(',');
-  if (req.body.users) req.body.users = req.body.users.split(',');
-  if (req.body.groups) req.body.groups = req.body.groups.split(',');
+  query = {}
+  if (req.body.valid_days) query.valid_days = req.body.valid_days.split(',');
+  if (req.body.users) query.users = req.body.users.split(',');
+  if (req.body.groups) query.groups = req.body.groups.split(',');
 
-  var new_event = new Event(req.body);
+  var new_event = new Event(query);
   new_event
     .save()
     .then(event => res.json(event))
