@@ -22,7 +22,7 @@ const apnProvider = new apn.Provider(options);
 exports.initCronJobs = function () {
   const processInvites = this.processInvites;
   const handleInvites = this.handleInvites;
-
+  console.log("initializing cron jobs");
   const handleInvitesJob = new CronJob('00 30 11 * * 0-6', function() {
     /*
      * Runs every weekday (Monday through Friday)
