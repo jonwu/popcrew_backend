@@ -11,61 +11,70 @@ const ObjectId = mongoose.Schema.Types.ObjectId;
 
 const options = {
   token: {
-    key: __dirname + "/AuthKey_PFGVSWDYQ6.p8",
+    key: __dirname + '/AuthKey_PFGVSWDYQ6.p8',
     keyId: 'PFGVSWDYQ6',
-    teamId: "Z2MXLM39UM"
+    teamId: 'Z2MXLM39UM',
   },
-  production: false
+  production: false,
 };
 const apnProvider = new apn.Provider(options);
 
-exports.initCronJobs = function () {
+exports.initCronJobs = function() {
   const processInvites = this.processInvites;
   const handleInvites = this.handleInvites;
 
-  const handleInvitesJob = new CronJob('00 30 11 * * 0-6', function() {
-    /*
+  const handleInvitesJob = new CronJob(
+    '00 30 11 * * 0-6',
+    function() {
+      /*
      * Runs every weekday (Monday through Friday)
      * at 11:30:00 AM. It does not run on Saturday
      * or Sunday.
      */
       handleInvites(moment());
-    }, function () {
-      /* This function is executed when the job stops */
-
     },
-    true, /* Start the job right now */
+    function() {
+      /* This function is executed when the job stops */
+    },
+    true /* Start the job right now */,
   );
 
-  const processInvitesJob = new CronJob('0 0 */4 * * *', function() {
+  const processInvitesJob = new CronJob(
+    '0 0 */4 * * *',
+    function() {
       /*
        * Runs every 4 hours
        */
-      processInvites()
-    }, function () {
-      /* This function is executed when the job stops */
-
+      processInvites();
     },
-    true, /* Start the job right now */
+    function() {
+      /* This function is executed when the job stops */
+    },
+    true /* Start the job right now */,
   );
-}
+};
 exports.handleNewUser = function(userId, groupId) {
-  return Event.find({ groups: groupId }).then(events => {
-    const updatedEvents = events.map(event => {
-      return Event.findOneAndUpdate({ _id: event._id }, {
-        $addToSet: { users: [userId]}
+  return Event.find({ groups: groupId })
+    .then(events => {
+      const updatedEvents = events.map(event => {
+        return Event.findOneAndUpdate(
+          { _id: event._id },
+          {
+            $addToSet: { users: [userId] },
+          },
+        );
       });
+      return Promise.all(updatedEvents);
+    })
+    .then(events => {
+      const invitations = events.filter(event => event.status === 'pending').map(event => {
+        return new Invitation({ user: userId, event: event._id }).save();
+      });
+      return Promise.all(invitations);
     });
-    return Promise.all(updatedEvents)
-  }).then(events => {
-    const invitations = events.filter(event => event.status === 'pending').map(event => {
-      return new Invitation({ user: userId, event: event._id }).save();
-    });
-    return Promise.all(invitations);
-  })
-}
+};
 exports.processInvites = function() {
-  console.log("Processing Invites");
+  console.log('Processing Invites');
   // const nowOffset = moment().subtract(1, 'hours');
   const nowOffset = moment().add(20, 'hours');
   Event.find()
@@ -74,7 +83,6 @@ exports.processInvites = function() {
     .then(events => {
       events.map(event => {
         Invitation.find({ event: event._id }).then(invitations => {
-
           // Get all events expired or all invitations are answered
           const isReady = invitations.reduce((ready, invitation) => {
             const postExpiration = moment(event.expiration) < nowOffset;
@@ -106,7 +114,7 @@ exports.processInvites = function() {
             // Unblackout?
             // If threshold is met:
             if (dates_options.length > 0) {
-              const moment_date = moment(dates_options[0])
+              const moment_date = moment(dates_options[0]);
               Event.findOneAndUpdate(
                 { _id: event._id },
                 {
@@ -118,7 +126,7 @@ exports.processInvites = function() {
                 event.users.map(userId => {
                   return User.findOne(userId).then(user => {
                     const message = `${event.name} is ready to start.`;
-                    const payload = { event: event._id }
+                    const payload = { event: event._id };
                     user.apn_tokens.forEach(token => {
                       sendPushNotification(token, message, payload);
                     });
@@ -135,7 +143,7 @@ exports.processInvites = function() {
 };
 
 exports.handleInvites = function(baseDate, expiration = 3) {
-  console.log("Handling Invites");
+  console.log('Handling Invites');
   // 1. Find all events by date, weight, and status
   return Event.find()
     .where('status')
@@ -164,8 +172,6 @@ exports.handleInvites = function(baseDate, expiration = 3) {
           })
           .then(isBlackedOut => {
             if (!isBlackedOut) {
-
-
               // 4. Check if valid days are blacked out
               const isBlackedOutPromises = event.valid_days.map(day => {
                 const validDate = getNextDate(date, day);
@@ -190,7 +196,7 @@ exports.handleInvites = function(baseDate, expiration = 3) {
                   });
                   return Promise.all(blackouts);
                 });
-                console.log("-------------" + event.name, randomDates);
+                console.log('-------------' + event.name, randomDates);
 
                 // Update event to pending
                 Event.findOneAndUpdate(
@@ -206,17 +212,16 @@ exports.handleInvites = function(baseDate, expiration = 3) {
 
                 // 7. Send out invitations
                 event.users.map(userId => {
-                  new Invitation({ user: userId, event: event._id }).save()
-                  .then(invitation => {
+                  new Invitation({ user: userId, event: event._id }).save().then(invitation => {
                     return User.findOne(userId).then(user => {
                       const message = `You have been invited to ${event.name}.`;
-                      const payload = { event: event._id, invitation }
+                      const payload = { event: event._id, invitation };
                       user.apn_tokens.forEach(token => {
-                        console.log(message)
+                        console.log(message);
                         sendPushNotification(token, message, payload);
-                      })
+                      });
                     });
-                  })
+                  });
                 });
 
                 return Promise.all(createBlackouts);
@@ -261,15 +266,15 @@ function isBlackedOutPromise(users, date) {
     });
 }
 
-function sendPushNotification (token, message, payload) {
+function sendPushNotification(token, message, payload) {
   const note = new apn.Notification();
   note.badge = 1;
-  note.sound = "ping.aiff";
+  note.sound = 'ping.aiff';
   note.alert = message;
   note.payload = payload;
-  note.topic = 'org.reactjs.native.jonwu.Popcrew'
-  apnProvider.send(note, token).then((result) => {
-    console.log(JSON.stringify(result))
-  // see documentation for an explanation of result
+  note.topic = 'org.reactjs.native.jonwu.Popcrew';
+  apnProvider.send(note, token).then(result => {
+    console.log(JSON.stringify(result));
+    // see documentation for an explanation of result
   });
 }
