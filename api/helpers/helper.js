@@ -133,7 +133,6 @@ exports.handleInvites = function(baseDate, expiration = 3) {
     .where('status')
     .equals('idle')
     .then(events => {
-      console.log("Idle events", events);
       // Get dates based on notified_days_before
       const validEvents = events.filter(event => {
         const date = moment(baseDate)
@@ -156,10 +155,7 @@ exports.handleInvites = function(baseDate, expiration = 3) {
             return isBlackedOutPromise(event.users, date);
           })
           .then(isBlackedOut => {
-            console.log("Blackout" + event.name, isBlackedOut);
             if (!isBlackedOut) {
-
-
               // 4. Check if valid days are blacked out
               const isBlackedOutPromises = event.valid_days.map(day => {
                 const validDate = getNextDate(date, day);
