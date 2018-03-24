@@ -22,29 +22,21 @@ const apnProvider = new apn.Provider(options);
 exports.initCronJobs = function () {
   const processInvites = this.processInvites;
   const handleInvites = this.handleInvites;
-  console.log("initializing cron jobs");
+  console.log("Initializing cron jobs...");
   const handleInvitesJob = new CronJob('00 30 11 * * 0-6', function() {
-    /*
-     * Runs every weekday (Monday through Friday)
-     * at 11:30:00 AM. It does not run on Saturday
-     * or Sunday.
-     */
+      console.log(moment());
       handleInvites(moment());
     }, function () {
       /* This function is executed when the job stops */
-
     },
     true, /* Start the job right now */
   );
 
   const processInvitesJob = new CronJob('0 0 */4 * * *', function() {
-      /*
-       * Runs every 4 hours
-       */
+      console.log(moment());
       processInvites()
     }, function () {
       /* This function is executed when the job stops */
-
     },
     true, /* Start the job right now */
   );
