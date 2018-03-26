@@ -134,6 +134,7 @@ exports.handleInvites = function(baseDate, expiration = 3) {
     .equals('idle')
     .then(events => {
       // Get dates based on notified_days_before
+
       const validEvents = events.filter(event => {
         const date = moment(baseDate)
           .startOf('day')
@@ -142,6 +143,7 @@ exports.handleInvites = function(baseDate, expiration = 3) {
       });
 
       // 2. shuffle events
+      console.log("Valid Events", validEvents);
       const shuffledEvents = _.shuffle(validEvents);
       let chainedPromises = Promise.resolve();
 
@@ -149,12 +151,14 @@ exports.handleInvites = function(baseDate, expiration = 3) {
         const date = moment(baseDate)
           .startOf('day')
           .add(event.notified_days_before + expiration, 'days');
+
         chainedPromises = chainedPromises
           .then(resp => {
             //3. get all blackouts from group of users & checked if first day is blacked out
             return isBlackedOutPromise(event.users, date);
           })
           .then(isBlackedOut => {
+            console.log(`${event.name} (${date}):`, isBlackedOut)
             if (!isBlackedOut) {
               // 4. Check if valid days are blacked out
               const isBlackedOutPromises = event.valid_days.map(day => {
