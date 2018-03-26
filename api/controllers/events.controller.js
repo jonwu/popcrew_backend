@@ -32,7 +32,6 @@ exports.read = function(req, res) {
 };
 
 exports.update = function(req, res) {
-  query = {}
   if (req.body.valid_days) req.body.valid_days = req.body.valid_days.split(',');
   req.body.users = req.body.users ? req.body.users.split(',') : [];
   req.body.groups = req.body.groups ? req.body.groups.split(',') : [];
