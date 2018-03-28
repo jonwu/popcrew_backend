@@ -39,7 +39,7 @@ var EventsSchema = new Schema({
   },
   notified_days_before: {
     type: Number,
-    default: 7,
+    default: 3,
   },
   expiration: {
     type: Date,

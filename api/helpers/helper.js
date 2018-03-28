@@ -153,7 +153,7 @@ exports.handleInvites = function(baseDate, expiration = 3) {
         chainedPromises = chainedPromises
           .then(resp => {
             //3. get all blackouts from group of users & checked if first day is blacked out
-            return isBlackedOutPromise(event.users, date);
+            return isBlackedOutPromise(event.users, date, event.length);
           })
           .then(isBlackedOut => {
             console.log(`${event.name} (${date}):`, isBlackedOut)
@@ -161,7 +161,7 @@ exports.handleInvites = function(baseDate, expiration = 3) {
               // 4. Check if valid days are blacked out
               const isBlackedOutPromises = event.valid_days.map(day => {
                 const validDate = getNextDate(date, day);
-                return isBlackedOutPromise(event.users, validDate);
+                return isBlackedOutPromise(event.users, validDate, event.length);
               });
 
               // 5. Choose at most 3 random days
@@ -175,15 +175,21 @@ exports.handleInvites = function(baseDate, expiration = 3) {
                   availableDates[0],
                   ..._.sampleSize(availableDates.slice(1), 2),
                 ];
-                // 6. Blackout the random days
-                const createBlackouts = randomDates.map(date => {
-                  const blackouts = event.users.map(user => {
-                    return new Blackout({ date, user, event: event._id }).save();
-                  });
-                  return Promise.all(blackouts);
-                });
-                console.log("-------------" + event.name, randomDates);
 
+                // 6. Blackout the random days
+                const blackouts = [];
+                randomDates.forEach(date => {
+                  event.users.forEach(user => {
+                    for (let i = 0; i < event.length; i++) {
+                      const newDate = date.add(i, 'days');
+                      const blackout = new Blackout({ date: newDate, user, event: event._id }).save();
+                      console.log(newDate);
+                      blackouts.push(blackout);
+                    }
+                  });
+                });
+
+                console.log("-------------" + event.name, randomDates);
                 // Update event to pending
                 Event.findOneAndUpdate(
                   { _id: event._id },
@@ -211,7 +217,7 @@ exports.handleInvites = function(baseDate, expiration = 3) {
                   })
                 });
 
-                return Promise.all(createBlackouts);
+                return Promise.all(blackouts);
               });
             }
             return Promise.resolve();
@@ -239,9 +245,9 @@ function getDay(date) {
   return days[moment(date).isoWeekday()];
 }
 
-function isBlackedOutPromise(users, date) {
+function isBlackedOutPromise(users, date, length) {
   const start = moment(date).startOf('day');
-  const end = moment(date).endOf('day');
+  const end = moment(date).add(length - 1, 'days').endOf('day');
   return Blackout.find()
     .where('user')
     .in(users)
