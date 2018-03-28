@@ -66,7 +66,6 @@ exports.processInvites = function() {
     .then(events => {
       events.map(event => {
         Invitation.find({ event: event._id }).then(invitations => {
-
           // Get all events expired or all invitations are answered
           const isReady = invitations.reduce((ready, invitation) => {
             const postExpiration = moment(event.expiration) < nowOffset;
@@ -134,7 +133,6 @@ exports.handleInvites = function(baseDate, expiration = 3) {
     .equals('idle')
     .then(events => {
       // Get dates based on notified_days_before
-
       const validEvents = events.filter(event => {
         const date = moment(baseDate)
           .startOf('day')
@@ -143,7 +141,7 @@ exports.handleInvites = function(baseDate, expiration = 3) {
       });
 
       // 2. shuffle events
-      console.log("Valid Events", validEvents);
+      // console.log("Valid Events", validEvents);
       const shuffledEvents = _.shuffle(validEvents);
       let chainedPromises = Promise.resolve();
 
