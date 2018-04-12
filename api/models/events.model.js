@@ -44,7 +44,7 @@ var EventsSchema = new Schema({
   expiration: {
     type: Date,
   },
-  length: {
+  duration: {
     type: Number,
     default: 1,
   },

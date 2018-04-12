@@ -1,6 +1,7 @@
 'use strict';
 var mongoose = require('mongoose'),
-  Event = mongoose.model('Events');
+  Event = mongoose.model('Events'),
+  Invitation = mongoose.model('Invitations');
 
 exports.list = function(req, res) {
   const query = {};
@@ -8,8 +9,11 @@ exports.list = function(req, res) {
   if (req.query.user) query.users = req.query.user;
   let EventObj = Event.find(query)
   if (req.query.expiration) EventObj = EventObj.sort({expiration: req.query.expiration})
-  EventObj.populate('users')
-    .then(event => res.json(event))
+  EventObj
+    .populate('users')
+    .then(events => {
+      res.json(events)
+    })
     .catch(err => res.send(err));
 };
 
@@ -22,7 +26,15 @@ exports.create = function(req, res) {
   var new_event = new Event(req.body);
   new_event
     .save()
-    .then(event => res.json(event))
+    .then(event => {
+      Event.find({ users: event.author, status: 'idle'}).then((events) => {
+        const idleEventsCount = events.length;
+        const transformedEvent = Object.assign({}, event.toJSON(), {
+          idleEventsCount,
+        });
+        res.json(transformedEvent)
+      })
+    })
     .catch(err => res.send(err));
 };
 
