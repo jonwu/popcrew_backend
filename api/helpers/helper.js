@@ -23,11 +23,13 @@ const apnProvider = new apn.Provider(options);
 exports.initCronJobs = function() {
   const processInvites = this.processInvites;
   const handleInvites = this.handleInvites;
+  const processMorningNotifications = this.processMorningNotifications;
+  const processNightNotifications = this.processNightNotifications;
+
   console.log('Initializing cron jobs...');
-  const handleInvitesJob = new CronJob(
+  new CronJob(
     '00 30 11 * * 0-6',
     function() {
-      console.log(moment());
       handleInvites(moment());
     },
     function() {
@@ -36,10 +38,31 @@ exports.initCronJobs = function() {
     true /* Start the job right now */,
   );
 
-  const processInvitesJob = new CronJob(
+  new CronJob(
+    '00 30 08 * * 0-6',
+    function() {
+      processMorningNotifications();
+    },
+    function() {
+      /* This function is executed when the job stops */
+    },
+    true /* Start the job right now */,
+  );
+
+  new CronJob(
+    '00 00 20 * * 0-6',
+    function() {
+      processNightNotifications();
+    },
+    function() {
+      /* This function is executed when the job stops */
+    },
+    true /* Start the job right now */,
+  );
+
+  new CronJob(
     '0 0 */4 * * *',
     function() {
-      console.log(moment());
       processInvites();
     },
     function() {
@@ -48,6 +71,44 @@ exports.initCronJobs = function() {
     true /* Start the job right now */,
   );
 };
+exports.processMorningNotifications = function() {
+  const today = moment().startOf('day');
+  const tommorow = today.clone().add(1, 'day');
+  return Event.find({ status: 'active'}).then(events => {
+    events.map(event => {
+      if (today.format('LL') === moment(event.date_confirmed).format('LL')) {
+        event.users.map(userId => {
+          return User.findOne(userId).then(user => {
+            const message = `"${event.name}" is happening today!`;
+            const payload = { event: event._id };
+            user.apn_tokens.forEach(token => {
+              sendPushNotification(token, message, payload);
+            });
+          });
+        });
+      }
+    })
+  })
+}
+exports.processNightNotifications = function() {
+  const today = moment().startOf('day');
+  const tommorow = today.clone().add(1, 'day');
+  return Event.find({ status: 'active'}).then(events => {
+    events.map(event => {
+      if (tommorow.format('LL') === moment(event.date_confirmed).format('LL')) {
+        event.users.map(userId => {
+          return User.findOne(userId).then(user => {
+            const message = `"${event.name}" is happening tommorow`;
+            const payload = { event: event._id };
+            user.apn_tokens.forEach(token => {
+              sendPushNotification(token, message, payload);
+            });
+          });
+        });
+      }
+    })
+  })
+}
 exports.addNewUser = function(codename, userId) {
   const handleNewUser = this.handleNewUser;
   const query = {};
