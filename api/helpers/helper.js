@@ -16,7 +16,7 @@ const options = {
     keyId: 'PFGVSWDYQ6',
     teamId: 'Z2MXLM39UM',
   },
-  production: false,
+  production: true,
 };
 const apnProvider = new apn.Provider(options);
 
