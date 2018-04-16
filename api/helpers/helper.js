@@ -74,7 +74,7 @@ exports.initCronJobs = function() {
 exports.processMorningNotifications = function() {
   const today = moment().startOf('day');
   const tommorow = today.clone().add(1, 'day');
-  return Event.find({ status: 'active'}).then(events => {
+  return Event.find({ status: 'active' }).then(events => {
     events.map(event => {
       if (today.format('LL') === moment(event.date_confirmed).format('LL')) {
         event.users.map(userId => {
@@ -87,13 +87,13 @@ exports.processMorningNotifications = function() {
           });
         });
       }
-    })
-  })
-}
+    });
+  });
+};
 exports.processNightNotifications = function() {
   const today = moment().startOf('day');
   const tommorow = today.clone().add(1, 'day');
-  return Event.find({ status: 'active'}).then(events => {
+  return Event.find({ status: 'active' }).then(events => {
     events.map(event => {
       if (tommorow.format('LL') === moment(event.date_confirmed).format('LL')) {
         event.users.map(userId => {
@@ -106,9 +106,9 @@ exports.processNightNotifications = function() {
           });
         });
       }
-    })
-  })
-}
+    });
+  });
+};
 exports.addNewUser = function(codename, userId) {
   const handleNewUser = this.handleNewUser;
   const query = {};
@@ -208,6 +208,7 @@ exports.processInvites = function() {
 
 exports.handleInvites = function(baseDate, expiration = 3) {
   console.log('Handling Invites');
+  const handleSingleEvent = this.handleSingleEvent;
   // 1. Find all events by date, weight, and status
   return Event.find()
     .where('status')
@@ -222,86 +223,86 @@ exports.handleInvites = function(baseDate, expiration = 3) {
       });
 
       // 2. shuffle events
-      // console.log("Valid Events", validEvents);
       const shuffledEvents = _.shuffle(validEvents);
       let chainedPromises = Promise.resolve();
 
       shuffledEvents.map(event => {
-        const date = moment(baseDate)
-          .startOf('day')
-          .add(event.notified_days_before + expiration, 'days');
-
-        chainedPromises = chainedPromises
-          .then(resp => {
-            //3. get all blackouts from group of users & checked if first day is blacked out
-            return isBlackedOutPromise(event.users, date, event.duration);
-          })
-          .then(isBlackedOut => {
-            console.log(`${event.name} (${date}):`, isBlackedOut);
-            if (!isBlackedOut) {
-              // 4. Check if valid days are blacked out
-              const isBlackedOutPromises = event.valid_days.map(day => {
-                const validDate = getNextDate(date, day);
-                return isBlackedOutPromise(event.users, validDate, event.duration);
-              });
-
-              // 5. Choose at most 3 random days
-              return Promise.all(isBlackedOutPromises).then(isBlackedOuts => {
-                const availableDays = event.valid_days.filter((days, i) => !isBlackedOuts[i]);
-                const availableDates = availableDays.map(day => getNextDate(date, day)).sort((left, right) => left.diff(right));
-
-                const randomDates = [availableDates[0], ..._.sampleSize(availableDates.slice(1), 1)];
-
-                // 6. Blackout the random days
-                const blackouts = [];
-                randomDates.forEach(date => {
-                  event.users.forEach(user => {
-                    for (let i = 0; i < event.duration; i++) {
-                      const newDate = date.add(i, 'days');
-                      const blackout = new Blackout({ date: newDate, user, event: event._id }).save();
-                      console.log(newDate);
-                      blackouts.push(blackout);
-                    }
-                  });
-                });
-
-                console.log('-------------' + event.name, randomDates);
-                // Update event to pending
-                Event.findOneAndUpdate(
-                  { _id: event._id },
-                  {
-                    status: 'pending',
-                    dates_options: randomDates,
-                    expiration: moment(baseDate)
-                      .startOf('day')
-                      .add(expiration, 'days'),
-                  },
-                ).exec();
-
-                // 7. Send out invitations
-                event.users.map(userId => {
-                  new Invitation({ user: userId, event: event._id }).save().then(invitation => {
-                    return User.findOne(userId).then(user => {
-                      const message = `You have been invited to ${event.name}.`;
-                      const payload = { event: event._id, invitation };
-                      user.apn_tokens.forEach(token => {
-                        console.log(message);
-                        sendPushNotification(token, message, payload);
-                      });
-                    });
-                  });
-                });
-
-                return Promise.all(blackouts);
-              });
-            }
-            return Promise.resolve();
-          });
+        chainedPromises = chainedPromises.then(resp => {
+          return handleSingleEvent(baseDate, event, expiration);
+        });
       });
       return chainedPromises;
     });
 };
 
+exports.handleSingleEvent = function(baseDate, event, expiration = 3) {
+  const date = moment(baseDate)
+    .startOf('day')
+    .add(event.notified_days_before + expiration, 'days');
+
+  //3. get all blackouts from group of users & checked if first day is blacked out
+  return isBlackedOutPromise(event.users, date, event.duration).then(isBlackedOut => {
+    console.log(`${event.name} (${date}):`, isBlackedOut);
+    if (!isBlackedOut) {
+      // 4. Check if valid days are blacked out
+      const isBlackedOutPromises = event.valid_days.map(day => {
+        const validDate = getNextDate(date, day);
+        return isBlackedOutPromise(event.users, validDate, event.duration);
+      });
+
+      // 5. Choose at most 3 random days
+      return Promise.all(isBlackedOutPromises).then(isBlackedOuts => {
+        const availableDays = event.valid_days.filter((days, i) => !isBlackedOuts[i]);
+        const availableDates = availableDays.map(day => getNextDate(date, day)).sort((left, right) => left.diff(right));
+
+        const randomDates = [availableDates[0], ..._.sampleSize(availableDates.slice(1), 1)];
+
+        // 6. Blackout the random days
+        const blackouts = [];
+        randomDates.forEach(date => {
+          event.users.forEach(user => {
+            for (let i = 0; i < event.duration; i++) {
+              const newDate = date.add(i, 'days');
+              const blackout = new Blackout({ date: newDate, user, event: event._id }).save();
+              console.log(newDate);
+              blackouts.push(blackout);
+            }
+          });
+        });
+
+        console.log('-------------' + event.name, randomDates);
+        // Update event to pending
+        Event.findOneAndUpdate(
+          { _id: event._id },
+          {
+            status: 'pending',
+            dates_options: randomDates,
+            expiration: moment(baseDate)
+              .startOf('day')
+              .add(expiration, 'days'),
+          },
+        ).exec();
+
+        // 7. Send out invitations
+        event.users.map(userId => {
+          new Invitation({ user: userId, event: event._id }).save().then(invitation => {
+            return User.findOne(userId).then(user => {
+              const message = `You have been invited to ${event.name}.`;
+              const payload = { event: event._id, invitation };
+              user.apn_tokens.forEach(token => {
+                console.log(message);
+                sendPushNotification(token, message, payload);
+              });
+            });
+          });
+        });
+
+        return Promise.all(blackouts);
+      });
+    }
+    return Promise.resolve();
+  });
+};
 function getNextDate(date, day) {
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const nDay = days.indexOf(day);
@@ -342,9 +343,10 @@ function sendPushNotification(token, message, payload) {
   note.sound = 'ping.aiff';
   note.alert = message;
   note.payload = payload;
-  note.topic = 'org.reactjs.native.jonwu.Popcrew';
+  note.topic = 'org.reactjs.native.jonwu.PlanIt';
   apnProvider.send(note, token).then(result => {
     console.log(JSON.stringify(result));
     // see documentation for an explanation of result
   });
 }
+exports.sendPushNotification = sendPushNotification;
