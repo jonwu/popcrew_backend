@@ -37,7 +37,7 @@ invitationsRoutes(app); //register the route
 // helper.processInvites();
 helper.initCronJobs();
 // helper.processMorningNotifications();
-// helper.sendPushNotification("120c183392591133303b3aed64a64f5634a87e3af95dc1bc78f75e230c5f5569", "test");
+// helper.sendPushNotification("826162268d5b589b3c46783b070bf3de4df1324d974b5b891b37fdf798ceecf2", "test");
 // helper.handleInvites(moment());
 
 

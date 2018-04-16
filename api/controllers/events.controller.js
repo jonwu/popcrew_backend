@@ -2,6 +2,7 @@
 var mongoose = require('mongoose'),
   Event = mongoose.model('Events'),
   Invitation = mongoose.model('Invitations');
+var helper = require('../helpers/helper');
 
 exports.list = function(req, res) {
   const query = {};
@@ -32,7 +33,9 @@ exports.create = function(req, res) {
         const transformedEvent = Object.assign({}, event.toJSON(), {
           idleEventsCount,
         });
-        res.json(transformedEvent)
+        helper.handleSingleEvent(moment(), event).then(() => {
+          res.json(transformedEvent);
+        })
       })
     })
     .catch(err => res.send(err));
