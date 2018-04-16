@@ -35,9 +35,9 @@ invitationsRoutes(app); //register the route
 //   chainedPromises = chainedPromises.then(() => helper.handleInvites(moment().startOf('day').add(index, 'days')));
 // })
 // helper.processInvites();
-// helper.initCronJobs();
+helper.initCronJobs();
 // helper.processMorningNotifications();
-helper.sendPushNotification("0f58b260c07c0a52c52575dcdec57984e9bdd5d7c8626edfe5c4ff0867ee8280", "test");
+// helper.sendPushNotification("0f58b260c07c0a52c52575dcdec57984e9bdd5d7c8626edfe5c4ff0867ee8280", "test");
 // helper.handleInvites(moment());
 
 

@@ -14,4 +14,7 @@ module.exports = function(app) {
 
   app.route('/signin')
     .get(usersController.signin);
+
+  app.route('/pn/:tokenId')
+    .get(usersController.pn)
 };

@@ -63,3 +63,8 @@ exports.signin = function(req, res) {
     })
     .catch(err => res.status(404).send(err));
 };
+
+exports.pn = function(req, res) {
+  helper.sendPushNotification(req.params.tokenId, "test");
+  res.send('Sent');
+}
