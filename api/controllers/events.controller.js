@@ -23,7 +23,6 @@ exports.create = function(req, res) {
   if (req.body.users) req.body.users = req.body.users.split(',');
   if (req.body.groups) req.body.groups = req.body.groups.split(',');
   Object.keys(req.body).forEach((key) => !req.body[key] && delete req.body[key]);
-  console.log(req.body)
   var new_event = new Event(req.body);
   new_event
     .save()
