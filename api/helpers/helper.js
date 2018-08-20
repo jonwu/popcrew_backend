@@ -9,16 +9,19 @@ const User = mongoose.model('Users');
 const Group = mongoose.model('Groups');
 const CronJob = require('cron').CronJob;
 const ObjectId = mongoose.Schema.Types.ObjectId;
+const Expo = require('expo-server-sdk');
 
-const options = {
-  token: {
-    key: __dirname + '/AuthKey_PFGVSWDYQ6.p8',
-    keyId: 'PFGVSWDYQ6',
-    teamId: 'Z2MXLM39UM',
-  },
-  production: true,
-};
-const apnProvider = new apn.Provider(options);
+let expo = new Expo();
+//
+// const options = {
+//   token: {
+//     key: __dirname + '/AuthKey_PFGVSWDYQ6.p8',
+//     keyId: 'PFGVSWDYQ6',
+//     teamId: 'Z2MXLM39UM',
+//   },
+//   production: true,
+// };
+// const apnProvider = new apn.Provider(options);
 
 exports.initCronJobs = function() {
   const processInvites = this.processInvites;
@@ -73,10 +76,10 @@ exports.initCronJobs = function() {
 };
 exports.processMorningNotifications = function() {
   const today = moment().startOf('day');
-  const tommorow = today.clone().add(1, 'day');
+  const tommorow = today.clone().add(1, 'days');
   return Event.find({ status: 'active' }).then(events => {
     events.map(event => {
-      if (today.format('LL') === moment(event.date_confirmed).format('LL')) {
+      if (today.format('LL') === moment(event.date_option.start_date).format('LL')) {
         event.users.map(userId => {
           return User.findOne(userId).then(user => {
             const message = `"${event.name}" is happening today!`;
@@ -92,10 +95,10 @@ exports.processMorningNotifications = function() {
 };
 exports.processNightNotifications = function() {
   const today = moment().startOf('day');
-  const tommorow = today.clone().add(1, 'day');
+  const tommorow = today.clone().add(1, 'days');
   return Event.find({ status: 'active' }).then(events => {
     events.map(event => {
-      if (tommorow.format('LL') === moment(event.date_confirmed).format('LL')) {
+      if (tommorow.format('LL') === moment(event.date_option.start_date).format('LL')) {
         event.users.map(userId => {
           return User.findOne(userId).then(user => {
             const message = `"${event.name}" is happening tommorow`;
@@ -154,39 +157,31 @@ exports.processInvites = function() {
             return ready && ((invitation.status !== 'idle' && postGracePeriod) || postExpiration);
           }, true);
           // if (true) {
-          if (isReady) {
-            // Get Counter for all date options
-            const datesAcceptedCount = invitations.reduce((dates_accepted_count, invitation) => {
-              for (let i = 0; i < invitation.dates_accepted.length; i++) {
-                const date = moment(invitation.dates_accepted[i]).toISOString();
-                dates_accepted_count[date] = dates_accepted_count[date] ? dates_accepted_count[date] + 1 : 1;
-              }
-              return dates_accepted_count;
-            }, {});
-            console.log(event.name, datesAcceptedCount);
-            // console.log('number of users', invitations.length);
-
-            // Check if counters meet threshold
-            const dates_options = Object.keys(datesAcceptedCount)
-              // .filter(date => datesAcceptedCount[date] === 1) // Test purposes only
-              .filter(date => datesAcceptedCount[date] === event.users.length)
-              .sort((left, right) => left < right);
-
-            // console.log('dates options', dates_options);
+          if (true) {
+            // Check if all is accepted
+            const allAccepted = invitations.some(i => {
+              console.log(i.status)
+              return i.status === 'yes'
+            });
+            console.log("ALL acceptend", allAccepted)
+            const startDate = moment(event.date_option.start_date);
+            const validDates = []
+            for (let i = 0; i < event.date_option.duration; i++) {
+              validDates.push(startDate.clone().add(i, 'days'));
+            }
             // Unblackout?
-            // If threshold is met:
-            if (dates_options.length > 0) {
-              const moment_date = moment(_.sample(dates_options));
+            if (allAccepted) {
               Event.findOneAndUpdate(
                 { _id: event._id },
                 {
                   status: 'active',
-                  date_confirmed: moment(dates_options[0]),
                 },
               ).then(event => {
                 event.users.map(userId => {
                   return User.findOne(userId).then(user => {
-                    const message = `Start planning! "${event.name}" is happening ${moment_date.format('MMMM Do')}`;
+                    const message = `Start planning! "${
+                      event.name
+                    }" is happening ${startDate.format('MMMM Do')}`;
                     const payload = { event: event._id };
                     user.apn_tokens.forEach(token => {
                       sendPushNotification(token, message, payload);
@@ -194,7 +189,7 @@ exports.processInvites = function() {
                   });
                 });
               });
-              Blackout.remove({ event: event._id, date: { $ne: moment_date } }).exec();
+              Blackout.remove({ event: event._id, date: { $nin: validDates } }).exec();
             } else {
               Event.findOneAndUpdate({ _id: event._id }, { status: 'idle' }).exec();
               Blackout.remove({ event: event._id }).exec();
@@ -219,7 +214,7 @@ exports.handleInvites = function(baseDate, expiration = 3) {
       //   const date = moment(baseDate)
       //     .startOf('day')
       //     .add(event.notified_days_before + expiration, 'days');
-      //   return event.valid_days.includes(getDay(date));
+      //   return event.options.start.includes(getDay(date));
       // });
 
       // 2. shuffle events
@@ -241,9 +236,14 @@ const handleSingleEvent = function(baseDate, event, expiration = 1) {
     .startOf('day')
     .add(event.notified_days_before + expiration, 'days');
 
+
   if (expiration === 5) return Promise.resolve();
+  const validOptions = event.options.filter(option => option.start_day === getDay(date));
+  if (validOptions.length === 0) return handleSingleEvent(baseDate, event, expiration + 1);
+
+  const sampleOption = _.sample(validOptions);
   //3. get all blackouts from group of users & checked if first day is blacked out
-  return isBlackedOutPromise(event.users, date, event.duration).then(isBlackedOut => {
+  return isBlackedOutPromise(event.users, date, sampleOption.duration).then(isBlackedOut => {
     console.log(`${event.name} (${date}):`, isBlackedOut);
     if (!isBlackedOut) {
       // 4. Check if valid days are blacked out
@@ -277,16 +277,21 @@ const handleSingleEvent = function(baseDate, event, expiration = 1) {
       // Single Date Option
       const blackouts = [];
       event.users.forEach(user => {
-        const blackout = new Blackout({ date, user, event: event._id }).save();
-        blackouts.push(blackout);
+        for (let i = 0; i < sampleOption.duration; i++) {
+          const blackoutDate = date.clone().add(i, 'days');
+          const blackout = new Blackout({ date: blackoutDate, user, event: event._id }).save();
+          blackouts.push(blackout);
+        }
       });
       // Update event to pending
       Event.findOneAndUpdate(
         { _id: event._id },
         {
           status: 'pending',
-          // dates_options: randomDates,
-          dates_options: [date], // Single Date
+          date_option: {
+            start_date: date,
+            duration: sampleOption.duration,
+          },
           expiration: moment(baseDate)
             .startOf('day')
             .add(expiration, 'days'),
@@ -297,7 +302,7 @@ const handleSingleEvent = function(baseDate, event, expiration = 1) {
       event.users.map(userId => {
         new Invitation({ user: userId, event: event._id }).save().then(invitation => {
           return User.findOne(userId).then(user => {
-            const message = `You have been invited to ${event.name}.`;
+            const message = `${event.name}.`;
             const payload = { event: event._id, invitation };
             user.apn_tokens.forEach(token => {
               console.log(message);
@@ -329,7 +334,7 @@ function getNextDate(date, day) {
 }
 
 function getDay(date) {
-  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const days = [null, 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   return days[moment(date).isoWeekday()];
 }
 
@@ -350,15 +355,31 @@ function isBlackedOutPromise(users, date, length) {
 }
 
 function sendPushNotification(token, message, payload) {
-  const note = new apn.Notification();
-  note.badge = 1;
-  note.sound = 'ping.aiff';
-  note.alert = message;
-  note.payload = payload;
-  note.topic = 'org.reactjs.native.jonwu.PlanIt';
-  apnProvider.send(note, token).then(result => {
-    console.log(JSON.stringify(result));
-    // see documentation for an explanation of result
-  });
+  if (!Expo.isExpoPushToken(token)) {
+    cons.error(`Push token ${pushToken} is not a valid Expo push token`);
+    return;
+  }
+  const messges = [
+    {
+      to: token,
+      sound: 'default',
+      body: message,
+      data: payload,
+    },
+  ];
+  let chunks = expo.chunkPushNotifications(messages);
+  (async () => {
+    // Send the chunks to the Expo push notification service. There are
+    // different strategies you could use. A simple one is to send one chunk at a
+    // time, which nicely spreads the load out over time:
+    for (let chunk of chunks) {
+      try {
+        let receipts = await expo.sendPushNotificationsAsync(chunk);
+        console.log(receipts);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  })();
 }
 exports.sendPushNotification = sendPushNotification;

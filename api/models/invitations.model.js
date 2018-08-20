@@ -4,9 +4,6 @@ var Schema = mongoose.Schema;
 var ObjectId = mongoose.Schema.Types.ObjectId;
 
 var InvitationsSchema = new Schema({
-  dates_accepted: [{
-    type: Date,
-  }],
   user: {
     type: ObjectId,
     ref: 'Users',
@@ -19,7 +16,7 @@ var InvitationsSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ['idle', 'accepted', 'rejected', 'interested'],
+    enum: ['idle', 'yes', 'no', 'maybe', 'no_interest'],
     default: 'idle'
   },
 },

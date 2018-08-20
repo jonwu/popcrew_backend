@@ -4,12 +4,11 @@ module.exports = function(app) {
 
   app.route('/invitations')
     .get(invitationsController.list)
-    .post(invitationsController.create);
+    .post(invitationsController.create)
+    .patch(invitationsController.update)
 
 
   app.route('/invitations/:invitationId')
     .get(invitationsController.read)
-    .patch(invitationsController.update)
     .delete(invitationsController.delete);
-
 };

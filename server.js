@@ -30,15 +30,17 @@ groupsRoutes(app); //register the route
 blackoutsRoutes(app); //register the route
 invitationsRoutes(app); //register the route
 
-let chainedPromises = Promise.resolve();
-[0,1,2,3,4,5,6,7,8,9,10, 11, 12, 13,14,15,16,17,18,19,20, 21].map(index => {
-  chainedPromises = chainedPromises.then(() => helper.handleInvites(moment().startOf('day').add(index, 'days')));
-})
-// helper.processInvites();
+// let chainedPromises = Promise.resolve();
+// [0,1,2,3,4,5,6,7,8,9,10, 11, 12, 13,14,15,16,17,18,19,20, 21].map(index => {
+//   chainedPromises = chainedPromises.then(() => helper.handleInvites(moment().startOf('day').add(index, 'days')));
+// })
+helper.processInvites();
 helper.initCronJobs();
 // helper.processMorningNotifications();
 // helper.sendPushNotification("826162268d5b589b3c46783b070bf3de4df1324d974b5b891b37fdf798ceecf2", "test");
 // helper.handleInvites(moment());
+
+
 
 
 console.log('RESTful API server started on: ' + port);

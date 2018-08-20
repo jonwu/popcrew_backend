@@ -9,16 +9,17 @@ exports.list = function(req, res) {
   if (req.query.user) query.user = req.query.user;
   if (req.query.event) query.event = req.query.event;
   Invitation.find(query)
+    .populate({path: 'event', populate: { path: 'users' }})
     .then(invitation => res.json(invitation))
     .catch(err => res.send(err));
 };
 
 exports.create = function(req, res) {
-  var new_invitation = new Invitation(req.body);
+`  var new_invitation = new Invitation(req.body);
   new_invitation
     .save()
     .then(invitation => res.json(invitation))
-    .catch(err => res.send(err));
+    .catch(err => res.send(err));`
 };
 
 exports.read = function(req, res) {
@@ -28,7 +29,7 @@ exports.read = function(req, res) {
 };
 
 exports.update = function(req, res) {
-  Invitation.findOneAndUpdate({ _id: req.params.invitationId }, req.body, { new: true })
+  Invitation.findOneAndUpdate({ event: req.body.event, user: req.body.user }, req.body, { new: true })
     .then(invitation => res.json(invitation))
     .catch(err => res.send(err));
 };

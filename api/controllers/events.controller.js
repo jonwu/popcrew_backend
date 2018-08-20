@@ -3,6 +3,7 @@ var mongoose = require('mongoose'),
   Event = mongoose.model('Events'),
   Invitation = mongoose.model('Invitations');
 var helper = require('../helpers/helper');
+const _ = require('lodash');
 
 exports.list = function(req, res) {
   const query = {};
@@ -19,22 +20,13 @@ exports.list = function(req, res) {
 };
 
 exports.create = function(req, res) {
-  if (req.body.valid_days) req.body.valid_days = req.body.valid_days.split(',');
-  if (req.body.users) req.body.users = req.body.users.split(',');
-  if (req.body.groups) req.body.groups = req.body.groups.split(',');
-  Object.keys(req.body).forEach((key) => !req.body[key] && delete req.body[key]);
+  console.log(req.body);
   var new_event = new Event(req.body);
   new_event
     .save()
     .then(event => {
-      Event.find({ users: event.author, status: 'idle'}).then((events) => {
-        const idleEventsCount = events.length;
-        const transformedEvent = Object.assign({}, event.toJSON(), {
-          idleEventsCount,
-        });
-        helper.handleSingleEvent(moment(), event).then(() => {
-          res.json(transformedEvent);
-        })
+      helper.handleSingleEvent(moment(), event).then(() => {
+        res.json(event);
       })
     })
     .catch(err => res.send(err));
@@ -47,11 +39,6 @@ exports.read = function(req, res) {
 };
 
 exports.update = function(req, res) {
-  if (req.body.valid_days) req.body.valid_days = req.body.valid_days.split(',');
-  if (req.body.users) req.body.users = req.body.users.split(',');
-  if (req.body.groups) req.body.groups = req.body.groups.split(',');
-  Object.keys(req.body).forEach((key) => !req.body[key] && delete req.body[key]);
-
   Event.findOneAndUpdate({ _id: req.params.eventId }, req.body, { new: true })
     .then(event => res.json(event))
     .catch(err => res.send(err));
